@@ -1,112 +1,137 @@
-🫀 Heart Attack Risk Prediction
+# 🫀 Heart Attack Risk Prediction
 
-This project focuses on predicting whether a patient is at risk of a heart attack based on medical attributes using multiple machine learning models with hyperparameter tuning.
+This project focuses on predicting whether a patient is at risk of a heart attack based on medical attributes using machine learning models.
 
+---
 
-📊 Data Insight
+## 📌 Project Overview
 
+The goal of this project is to build a classification model that can accurately predict heart attack risk using patient medical data.
 
-Dataset contains 7,000 patients with 15+ medical features
-Target variable: heart_attack_risk (0 = not at risk, 1 = at risk)
-Dataset is imbalanced — one class dominates significantly
-Features include demographics (age, gender), vitals (resting_bp, max_heart_rate, cholesterol), and lifestyle factors (smoking_status, alcohol_consumption, physical_activity)
+The workflow includes:
 
+- Data loading and exploration (EDA)
+- Data preprocessing and feature encoding
+- Model training with hyperparameter tuning
+- Model evaluation and comparison
 
+---
 
-🔍 EDA Insight
+## 📋 Dataset
 
+The dataset contains **7,000 patients** with the following features:
 
-age shows a bell-curve distribution (18–90 years, majority 40–65)
-cholesterol and resting_bp are right-skewed with notable outliers above 280–300 and 155–160 respectively
-oldpeak and num_major_vessels are heavily right-skewed — majority of values near zero
-Binary features (fasting_blood_sugar, exercise_angina, family_history, diabetes) are imbalanced with one value dominating
-stress_level shows a uniform distribution across all levels
+- `age` — patient age
+- `gender` — male / female
+- `resting_bp` — resting blood pressure
+- `cholesterol` — serum cholesterol
+- `fasting_blood_sugar` — fasting blood sugar > 120 mg/dl
+- `max_heart_rate` — maximum heart rate achieved
+- `exercise_angina` — exercise induced angina
+- `oldpeak` — ST depression induced by exercise
+- `num_major_vessels` — number of major vessels colored by fluoroscopy
+- `thalassemia` — thalassemia type
+- `bmi` — body mass index
+- `smoking_status` — never / former / current
+- `alcohol_consumption` — non-drinker / moderate / heavy
+- `physical_activity` — low / moderate / high
+- `heart_attack_risk` — **target variable** (0 = not at risk, 1 = at risk)
 
+---
 
-Key Correlations to Target (heart_attack_risk):
+## 🔍 EDA Insight
 
-FeatureCorrelationDirectionage0.35Higher age → higher riskmax_heart_rate-0.32Higher max HR → lower riskresting_bp0.29Higher BP → higher riskcholesterol0.25Higher cholesterol → higher risknum_major_vessels0.25More vessels → higher riskdiabetes0.22Presence → higher risk
+Key findings from exploratory data analysis:
 
-No dangerous multicollinearity (>0.8) found between features. Highest inter-feature correlation is age vs max_heart_rate (-0.62), which is medically expected.
+- `age`, `resting_bp`, and `cholesterol` are **positively correlated** with heart attack risk
+- `max_heart_rate` is **negatively correlated** — higher heart rate indicates a healthier heart
+- Dataset is **imbalanced** — one class dominates significantly
+- No dangerous multicollinearity found (max inter-feature correlation: 0.62)
+- `oldpeak` and `num_major_vessels` show **right-skewed** distributions
 
+---
 
-⚙️ Preprocessing Insight
+## ⚙️ Preprocessing
 
+Steps applied to clean and prepare the data:
 
-Dropped: patient_id (unique identifier, no predictive value)
-Missing values handled:
+- Dropped `patient_id` — no predictive value
+- Filled missing numerical values with **median** (`resting_bp`, `max_heart_rate`, `oldpeak`)
+- Filled missing binary values with **mode** (`fasting_blood_sugar`)
+- Dropped rows with `"unknown"` values in categorical columns (~7% of data)
+- Applied **Label Encoding** for binary features (`gender`, `exercise_angina`)
+- Applied **Ordinal Encoding** for ordered features (`alcohol_consumption`, `physical_activity`, `thalassemia`)
+- Applied **One-Hot Encoding** for nominal features (`chest_pain_type`, `resting_ecg`, `smoking_status`, `st_slope`)
+- Final dataset: **~6,495 rows** after cleaning
 
-Numerical columns (resting_bp, max_heart_rate, oldpeak) → filled with median
-Binary column (fasting_blood_sugar) → filled with mode
-Categorical columns with "unknown" values (smoking_status, physical_activity, alcohol_consumption) → rows dropped (~7% of data)
+---
 
+## 🤖 Modeling
 
+All models were tuned using **GridSearchCV** with `cv=5` and optimized for **Recall**, prioritizing the detection of true heart attack cases and minimizing false negatives.
 
-Encoding:
+| Model | Accuracy | Recall (class 1) |
+|---|---|---|
+| ✅ Logistic Regression | 79.5% | 0.74 |
+| Random Forest | 78.1% | 0.70 |
+| Gaussian Naive Bayes | 77.3% | 0.74 |
+| Decision Tree | 62.6% | 0.53 |
 
-Binary features (gender, exercise_angina) → Label Encoding (map to 0/1)
-Ordinal features (alcohol_consumption, physical_activity) → Manual Mapping (preserving order)
-Ordinal medical features (thalassemia, st_slope) → Manual Mapping
-Nominal features (chest_pain_type, resting_ecg, smoking_status) → One-Hot Encoding (pd.get_dummies)
+**Best model: Logistic Regression** — `C=1`, `solver=liblinear`
 
+> ⚠️ In a medical context, **Recall is the most critical metric**. A False Negative (predicting a sick patient as healthy) is far more dangerous than a False Positive.
 
+---
 
-Final dataset: ~6,495 rows after cleaning
+## 📁 File Structure
 
-
-
-🤖 Modeling Insight
-
-All models were tuned using GridSearchCV with cv=5 and optimized for Recall (prioritizing detection of true heart attack cases — minimizing false negatives).
-
-Model Comparison (after tuning):
-
-ModelAccuracyRecall (class 1)Logistic Regression~79.5% 🥇0.74 🥇Random Forest~78.1% 🥈0.70 🥈Gaussian Naive Bayes~77.3% 🥉0.74 🥇Decision Tree~62.6% ❌0.53 ❌
-
-Best Model: Logistic Regression
-
-
-Best params: C=1, solver=liblinear
-Chosen for highest accuracy, strong recall, and interpretability
-Recall of 0.74 means 74% of actual heart attack patients are correctly identified
-
-
-
-⚠️ In a medical context, Recall is the most critical metric — a False Negative (predicting a sick patient as healthy) is far more dangerous than a False Positive.
-
-
-
-
-📁 File Structure
-
+```
 heart_attack_project/
 │
 ├── data/
-│   ├── raw/                        ← original data, never modified
-│   │   └── heart_attack.csv
-│   └── processed/                  ← cleaned & encoded data
-│       └── heart_clean.csv
+│   ├── raw/
+│   │   └── heart_attack.csv          ← original data, never modified
+│   └── processed/
+│       └── heart_clean.csv           ← cleaned & encoded data
 │
-├── MODEL/                          ← saved trained model
-│   └── heart_risk_model.joblib
+├── MODEL/
+│   └── heart_risk_model.joblib       ← saved trained model
 │
 ├── notebooks/
-│   ├── 01_EDA.ipynb                ← exploratory data analysis & visualization
-│   ├── 02_preprocessing.ipynb      ← data cleaning & encoding
-│   └── 03_modeling.ipynb           ← model training, tuning & evaluation
+│   ├── 01_EDA.ipynb                  ← exploratory analysis & visualization
+│   ├── 02_preprocessing.ipynb        ← cleaning & encoding
+│   └── 03_modeling.ipynb             ← training, tuning & evaluation
 │
 └── README.md
+```
 
+---
 
-🛠️ Dependencies
+## 🛠️ Dependencies
 
-bashpip install pandas scikit-learn joblib matplotlib seaborn
+```bash
+pip install pandas scikit-learn joblib matplotlib seaborn
+```
 
+---
 
-🚀 How to Run
+## 🚀 How to Run
 
+1. Clone the repository
+2. Install dependencies
+3. Run notebooks in order:
+   - `01_EDA.ipynb`
+   - `02_preprocessing.ipynb`
+   - `03_modeling.ipynb`
+4. Trained model is saved as `MODEL/heart_risk_model.joblib`
 
-Clone the repository
-Install dependencies
-Run notebooks in order: 01_EDA → 02_preprocessing → 03_modeling
-Trained model is saved as MODEL/heart_risk_model.joblib
+---
+
+## 📦 Load Saved Model
+
+```python
+import joblib
+
+model = joblib.load("MODEL/heart_risk_model.joblib")
+prediction = model.predict(X_new)
+```
